@@ -18,6 +18,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
+
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
@@ -28,6 +30,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
+  String url;
+
+  Future<void> refresh() async {
+    setState(() {
+      url = "http://192.168.1.8:3000/guru/kepsek/kalender";
+    });
+    return true;
+  }
+
   List _selectedEvents;
   Map<DateTime, List> _events;
   CalendarController _calendarController;
@@ -137,11 +150,25 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       var original = mapFetch[date];
       if (original == null) {
         print("null");
-        mapFetch[date] = [event[i].time + " | " + event[i].title];
+        mapFetch[date] = [
+          event[i].date.toString().substring(0, 10) +
+              " (" +
+              event[i].time +
+              ")" +
+              "\n" +
+              capitalize(event[i].title)
+        ];
       } else {
         print(event[i].date);
         mapFetch[date] = List.from(original)
-          ..addAll([event[i].time + " | " + event[i].title]);
+          ..addAll([
+            event[i].date.toString().substring(0, 10) +
+                " (" +
+                event[i].time +
+                ")" +
+                "\n" +
+                capitalize(event[i].title)
+          ]);
       }
     }
 
@@ -172,6 +199,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       print(' ${_events.toString()} ');
     });
     super.initState();
+    url = "http://192.168.1.8:3000/guru/kepsek/kalender";
   }
 
   @override
@@ -187,15 +215,19 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         leading: Icon(Icons.event_available),
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            _buildTableCalendarWithBuilders(),
-            const SizedBox(height: 8.0),
-            const SizedBox(height: 8.0),
-            Expanded(child: _buildEventList()),
-          ],
+      body: RefreshIndicator(
+        onRefresh: refresh,
+        key: _refreshIndicatorKey,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _buildTableCalendarWithBuilders(),
+              const SizedBox(height: 8.0),
+              const SizedBox(height: 8.0),
+              Expanded(child: _buildEventList()),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -352,29 +384,35 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Widget _buildEventList() {
     return ListView(
       children: _selectedEvents
-          .map((event) => Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Card(
-                  elevation: 5,
-                  shadowColor: Colors.grey[200].withOpacity(.4),
-                  margin: EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  child: Container(
-                    child: ListTile(
-                      leading: Icon(Icons.alarm),
-                      title: Text(event.toString()),
-                      onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => EventDetail(
-                                  itemHolder: _selectedEvents,
-                                )));
-                      },
-                    ),
+          .map(
+            (event) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Card(
+                elevation: 5,
+                shadowColor: Colors.grey[200].withOpacity(.4),
+                margin: EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                child: Container(
+                  child: ListTile(
+                    leading: Icon(Icons.alarm),
+                    title: Text(event.toString()),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => EventDetail(
+                            index: event,
+                          ),
+                        ),
+                      );
+                      //print(event);
+                    },
                   ),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }

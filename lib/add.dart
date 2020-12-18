@@ -22,7 +22,7 @@ class _AddDateState extends State<AddDate> {
   Future<List> _addevent() async {
     String groupid = DateFormat("yyyyMM").format(DateTime.now()) + 'GROUPEVENT';
     final response =
-        await http.post("http://192.168.1.2:3000/guru/kepsek/kalender", body: {
+        await http.post("http://192.168.1.8:3000/guru/kepsek/kalender", body: {
       "date": eventdateController.text,
       "group_id": groupid,
       "time": eventtimeController.text,
@@ -129,6 +129,7 @@ class _AddDateState extends State<AddDate> {
                       eventpriorityController.clear();
                       eventtaskController.clear();
                       eventtimeController.clear();
+                      Navigator.of(context).pop();
                     },
                     child: Text("Save"),
                   )
